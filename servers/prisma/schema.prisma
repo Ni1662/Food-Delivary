@@ -26,7 +26,7 @@ model User {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
   name         String
   email        String   @unique
-  phone_number Float    @unique 
+  phone_number Float?  
   address      String?
   password     String
   avatar       Avatars?
@@ -34,5 +34,3 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
-
-// name, email, password , Avatar, role, phone_number, address, 
