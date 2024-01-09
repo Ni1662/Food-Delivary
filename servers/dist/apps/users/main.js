@@ -127,7 +127,7 @@ exports.EmailModule = EmailModule = __decorate([
                         },
                     },
                     defaults: {
-                        from: 'Becodemy',
+                        from: 'AmNite',
                     },
                     template: {
                         dir: (0, path_1.join)(__dirname, '../../../../servers/email-templates'),
@@ -1060,6 +1060,9 @@ async function bootstrap() {
     app.useStaticAssets((0, path_1.join)(__dirname, '..', 'public'));
     app.setBaseViewsDir((0, path_1.join)(__dirname, '..', 'servers/email-templates'));
     app.setViewEngine('ejs');
+    app.enableCors({
+        origin: '*',
+    });
     await app.listen(4001);
 }
 bootstrap();
