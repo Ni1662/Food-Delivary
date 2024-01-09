@@ -1,19 +1,32 @@
 import styles from "@/src/utils/style";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { FcGoogle } from "react-icons/fc";
 import { useState } from "react";
+import toast from "react-hot-toast";
+import { useMutation } from "@apollo/client";
+import { LOGIN_USER } from "@/src/graphql/actions/login.action";
+import Cookies from "js-cookie";
+// import { signIn } from "next-auth/react"
 
 const formSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8, "Password must be at least 8 characters long!"),
+  password: z.string().min(8, "Password must be at least 8characters long!"),
 });
 
 type LoginSchema = z.infer<typeof formSchema>;
 
-const Login = ({ setActiveState }: { setActiveState: (e:string) => void }) => {
+const Login = ({
+  setActiveState,
+  setOpen,
+}: {
+  setActiveState: (e: string) => void;
+  setOpen: (e: boolean) => void;
+}) => {
+  const [Login, { loading }] = useMutation(LOGIN_USER);
+
   const {
     register,
     handleSubmit,
@@ -24,14 +37,29 @@ const Login = ({ setActiveState }: { setActiveState: (e:string) => void }) => {
   });
   const [show, setShow] = useState(false);
 
-  const onSubmit = (data: LoginSchema) => {
-    console.log(data);
-    reset();
+  const onSubmit = async (data: LoginSchema) => {
+    const loginData = {
+      email: data.email,
+      password: data.password,
+    };
+    const response = await Login({
+      variables: loginData,
+    });
+    if (response.data.Login.user) {
+      toast.success("Login Successful!");
+      Cookies.set("refresh_token", response.data.Login.refreshToken);
+      Cookies.set("access_token", response.data.Login.accessToken);
+      setOpen(false);
+      reset();
+      window.location.reload();
+    } else {
+      toast.error(response.data.Login.error.message);
+    }
   };
 
   return (
     <div>
-      <h1 className={`${styles.title}`}>Login with AmNite</h1>
+      <h1 className={`${styles.title}`}>Login with Becodemy</h1>
       <form onSubmit={handleSubmit(onSubmit)}>
         <label className={`${styles.label}`}>Enter your Email</label>
         <input
@@ -75,14 +103,14 @@ const Login = ({ setActiveState }: { setActiveState: (e:string) => void }) => {
         <div className="w-full mt-5">
           <span
             className={`${styles.label} text-[#2190ff] block text-right cursor-pointer`}
-            // onClick={() => setActiveState("Forgot-Password")}
+            onClick={() => setActiveState("Forgot-Password")}
           >
             Forgot your password?
           </span>
           <input
             type="submit"
             value="Login"
-            disabled={isSubmitting}
+            disabled={isSubmitting || loading}
             className={`${styles.button} mt-3`}
           />
         </div>
@@ -105,6 +133,7 @@ const Login = ({ setActiveState }: { setActiveState: (e:string) => void }) => {
             Sign up
           </span>
         </h5>
+        <br />
       </form>
     </div>
   );
