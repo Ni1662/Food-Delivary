@@ -4,10 +4,10 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from '../../../../prisma/prisma.service';
-import { ConfigService } from '@nestjs/config';
 import { GqlExecutionContext } from '@nestjs/graphql';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../../../../prisma/prisma.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -18,27 +18,26 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const gplContext = GqlExecutionContext.create(context);
-    const { req } = gplContext.getContext();
+    const gqlContext = GqlExecutionContext.create(context);
+    const { req } = gqlContext.getContext();
 
-    const accessToken = req.headers.accessToken as string;
-    const refreshToken = req.headers.refreshToken as string;
+    const accessToken = req.headers.accesstoken as string;
+    const refreshToken = req.headers.refreshtoken as string;
 
     if (!accessToken || !refreshToken) {
       throw new UnauthorizedException('Please login to access this resource!');
     }
 
     if (accessToken) {
-      const decoded = this.jwtService.verify(accessToken, {
-        secret: this.config.get<string>('ACCESS_TOKEN_SECRET'),
-      });
+      const decoded = this.jwtService.decode(accessToken);
 
-      if (!decoded) {
-        throw new UnauthorizedException('Invalid access token');
+      const expirationTime = decoded?.exp;
+
+      if (expirationTime * 1000 < Date.now()) {
+        await this.updateAccessToken(req);
       }
-
-      await this.updateAccessToken(req);
     }
+
     return true;
   }
 
@@ -46,12 +45,14 @@ export class AuthGuard implements CanActivate {
     try {
       const refreshTokenData = req.headers.refreshtoken as string;
 
-      const decoded = this.jwtService.verify(refreshTokenData, {
-        secret: this.config.get<string>('REFRESH_TOKEN_SECRET'),
-      });
+      const decoded = this.jwtService.decode(refreshTokenData);
 
-      if (!decoded) {
-        throw new UnauthorizedException('Invalid access token');
+      const expirationTime = decoded.exp * 1000;
+
+      if (expirationTime < Date.now()) {
+        throw new UnauthorizedException(
+          'Please login to access this resource!',
+        );
       }
 
       const user = await this.prisma.user.findUnique({

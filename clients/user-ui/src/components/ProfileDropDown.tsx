@@ -8,11 +8,20 @@ import {
 } from "@nextui-org/react";
 import { CgProfile } from "react-icons/cg";
 import AuthScreen from "../screens/AuthScreen";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import useUser from "../hooks/useUser";
 
 const ProfileDropDown = () => {
   const [signedIn, setsignedIn] = useState(false);
   const [open, setOpen] = useState(false);
+  const { user, loading } = useUser();
+
+  useEffect(() => {
+    if (!loading) {
+      setsignedIn(!!user);
+    }
+    console.log(user)
+  }, [loading, user]);
 
   return (
     <div className="flex items-center gap-4">
@@ -50,9 +59,7 @@ const ProfileDropDown = () => {
           onClick={() => setOpen(!open)}
         />
       )}
-      {open && <AuthScreen
-       setOpen={setOpen}
-        />}
+      {open && <AuthScreen setOpen={setOpen} />}
     </div>
   );
 };

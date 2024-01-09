@@ -307,10 +307,10 @@ var _a, _b, _c;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AuthGuard = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-const jwt_1 = __webpack_require__(/*! @nestjs/jwt */ "@nestjs/jwt");
-const prisma_service_1 = __webpack_require__(/*! ../../../../prisma/prisma.service */ "./prisma/prisma.service.ts");
-const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
 const graphql_1 = __webpack_require__(/*! @nestjs/graphql */ "@nestjs/graphql");
+const jwt_1 = __webpack_require__(/*! @nestjs/jwt */ "@nestjs/jwt");
+const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
+const prisma_service_1 = __webpack_require__(/*! ../../../../prisma/prisma.service */ "./prisma/prisma.service.ts");
 let AuthGuard = class AuthGuard {
     constructor(jwtService, prisma, config) {
         this.jwtService = jwtService;
@@ -318,32 +318,29 @@ let AuthGuard = class AuthGuard {
         this.config = config;
     }
     async canActivate(context) {
-        const gplContext = graphql_1.GqlExecutionContext.create(context);
-        const { req } = gplContext.getContext();
-        const accessToken = req.headers.accessToken;
-        const refreshToken = req.headers.refreshToken;
+        const gqlContext = graphql_1.GqlExecutionContext.create(context);
+        const { req } = gqlContext.getContext();
+        const accessToken = req.headers.accesstoken;
+        const refreshToken = req.headers.refreshtoken;
         if (!accessToken || !refreshToken) {
             throw new common_1.UnauthorizedException('Please login to access this resource!');
         }
         if (accessToken) {
-            const decoded = this.jwtService.verify(accessToken, {
-                secret: this.config.get('ACCESS_TOKEN_SECRET'),
-            });
-            if (!decoded) {
-                throw new common_1.UnauthorizedException('Invalid access token');
+            const decoded = this.jwtService.decode(accessToken);
+            const expirationTime = decoded?.exp;
+            if (expirationTime * 1000 < Date.now()) {
+                await this.updateAccessToken(req);
             }
-            await this.updateAccessToken(req);
         }
         return true;
     }
     async updateAccessToken(req) {
         try {
             const refreshTokenData = req.headers.refreshtoken;
-            const decoded = this.jwtService.verify(refreshTokenData, {
-                secret: this.config.get('REFRESH_TOKEN_SECRET'),
-            });
-            if (!decoded) {
-                throw new common_1.UnauthorizedException('Invalid access token');
+            const decoded = this.jwtService.decode(refreshTokenData);
+            const expirationTime = decoded.exp * 1000;
+            if (expirationTime < Date.now()) {
+                throw new common_1.UnauthorizedException('Please login to access this resource!');
             }
             const user = await this.prisma.user.findUnique({
                 where: {
