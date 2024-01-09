@@ -48,6 +48,7 @@ const Signup = ({
       );
       toast.success("Please check your email to activate your account!");
       reset();
+      setActiveState("Verification")
     } catch (error: any) {
       toast.error(error.message);
     }
