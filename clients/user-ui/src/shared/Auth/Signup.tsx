@@ -7,32 +7,49 @@ import { FcGoogle } from "react-icons/fc";
 import { useState } from "react";
 
 const formSchema = z.object({
+  name: z.string().min(3, "Name must be at least 3 characters long!"),
   email: z.string().email(),
-  password: z.string().min(8, "Password must be at least 8 characters long!"),
+  password: z.string().min(8, "Password must be at least 8characters long!"),
+  phone_number: z
+    .number()
+    .min(10, "Phone number must be at least 11 characters!"),
 });
 
-type LoginSchema = z.infer<typeof formSchema>;
+type SignUpSchema = z.infer<typeof formSchema>;
 
-const Login = ({ setActiveState }: { setActiveState: (e:string) => void }) => {
+const Signup = ({
+  setActiveState,
+}: {
+  setActiveState: (e: string) => void;
+}) => {
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
-  } = useForm<LoginSchema>({
+  } = useForm<SignUpSchema>({
     resolver: zodResolver(formSchema),
   });
   const [show, setShow] = useState(false);
 
-  const onSubmit = (data: LoginSchema) => {
+  const onSubmit = (data: SignUpSchema) => {
     console.log(data);
     reset();
   };
 
   return (
     <div>
-      <h1 className={`${styles.title}`}>Login with AmNite</h1>
+      <h1 className={`${styles.title}`}>Sign Up with AmNite</h1>
       <form onSubmit={handleSubmit(onSubmit)}>
+        <div className="w-full relative mb-3">
+          <label className={`${styles.label}`}>Enter your Name</label>
+          <input
+            {...register("name")}
+            type="text"
+            placeholder="Ni**"
+            className={`${styles.input}`}
+          />
+        </div>
         <label className={`${styles.label}`}>Enter your Email</label>
         <input
           {...register("email")}
@@ -45,6 +62,20 @@ const Login = ({ setActiveState }: { setActiveState: (e:string) => void }) => {
             {`${errors.email.message}`}
           </span>
         )}
+        <div className="w-full relative mt-3">
+          <label className={`${styles.label}`}>Enter your Phone Number</label>
+          <input
+            {...register("phone_number", { valueAsNumber: true })}
+            type="number"
+            placeholder="+8801*******"
+            className={`${styles.input}`}
+          />
+          {errors.phone_number && (
+            <span className="text-red-500 block mt-1">
+              {`${errors.phone_number.message}`}
+            </span>
+          )}
+        </div>
         <div className="w-full mt-5 relative mb-1">
           <label htmlFor="password" className={`${styles.label}`}>
             Enter your password
@@ -73,15 +104,9 @@ const Login = ({ setActiveState }: { setActiveState: (e:string) => void }) => {
           <span className="text-red-500">{`${errors.password.message}`}</span>
         )}
         <div className="w-full mt-5">
-          <span
-            className={`${styles.label} text-[#2190ff] block text-right cursor-pointer`}
-            // onClick={() => setActiveState("Forgot-Password")}
-          >
-            Forgot your password?
-          </span>
           <input
             type="submit"
-            value="Login"
+            value="Sign Up"
             disabled={isSubmitting}
             className={`${styles.button} mt-3`}
           />
@@ -97,12 +122,12 @@ const Login = ({ setActiveState }: { setActiveState: (e:string) => void }) => {
           <FcGoogle size={30} className="cursor-pointer mr-2" />
         </div>
         <h5 className="text-center pt-4 font-Poppins text-[14px]">
-          Not have any account?
+          Already have an account?
           <span
             className="text-[#2190ff] pl-1 cursor-pointer"
-            onClick={() => setActiveState("Signup")}
+            onClick={() => setActiveState("Login")}
           >
-            Sign up
+            Login
           </span>
         </h5>
       </form>
@@ -110,4 +135,4 @@ const Login = ({ setActiveState }: { setActiveState: (e:string) => void }) => {
   );
 };
 
-export default Login;
+export default Signup;
