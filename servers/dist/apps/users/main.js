@@ -19,7 +19,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.LoginDto = exports.ActivationDto = exports.RegisterDto = void 0;
+exports.ResetPasswordDto = exports.ForgotPasswordDto = exports.LoginDto = exports.ActivationDto = exports.RegisterDto = void 0;
 const graphql_1 = __webpack_require__(/*! @nestjs/graphql */ "@nestjs/graphql");
 const class_validator_1 = __webpack_require__(/*! class-validator */ "class-validator");
 let RegisterDto = class RegisterDto {
@@ -84,6 +84,35 @@ __decorate([
 exports.LoginDto = LoginDto = __decorate([
     (0, graphql_1.InputType)()
 ], LoginDto);
+let ForgotPasswordDto = class ForgotPasswordDto {
+};
+exports.ForgotPasswordDto = ForgotPasswordDto;
+__decorate([
+    (0, graphql_1.Field)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Email is required.' }),
+    (0, class_validator_1.IsEmail)({}, { message: 'Email must be valid.' }),
+    __metadata("design:type", String)
+], ForgotPasswordDto.prototype, "email", void 0);
+exports.ForgotPasswordDto = ForgotPasswordDto = __decorate([
+    (0, graphql_1.InputType)()
+], ForgotPasswordDto);
+let ResetPasswordDto = class ResetPasswordDto {
+};
+exports.ResetPasswordDto = ResetPasswordDto;
+__decorate([
+    (0, graphql_1.Field)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Password is required.' }),
+    (0, class_validator_1.MinLength)(8, { message: 'Password must be at least 8 characters.' }),
+    __metadata("design:type", String)
+], ResetPasswordDto.prototype, "password", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Activation Token is required.' }),
+    __metadata("design:type", String)
+], ResetPasswordDto.prototype, "activationToken", void 0);
+exports.ResetPasswordDto = ResetPasswordDto = __decorate([
+    (0, graphql_1.InputType)()
+], ResetPasswordDto);
 
 
 /***/ }),
@@ -519,14 +548,14 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var _a, _b, _c, _d, _e, _f;
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.UsersResolver = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const graphql_1 = __webpack_require__(/*! @nestjs/graphql */ "@nestjs/graphql");
 const users_service_1 = __webpack_require__(/*! ./users.service */ "./apps/users/src/users.service.ts");
 const user_types_1 = __webpack_require__(/*! ./types/user.types */ "./apps/users/src/types/user.types.ts");
 const user_dto_1 = __webpack_require__(/*! ./dto/user.dto */ "./apps/users/src/dto/user.dto.ts");
-const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const user_entity_1 = __webpack_require__(/*! ./entities/user.entity */ "./apps/users/src/entities/user.entity.ts");
 const auth_guard_1 = __webpack_require__(/*! ./guards/auth.guard */ "./apps/users/src/guards/auth.guard.ts");
 let UsersResolver = class UsersResolver {
@@ -548,6 +577,12 @@ let UsersResolver = class UsersResolver {
     }
     async getLoggedInUser(context) {
         return await this.userService.getLoggedInUser(context.req);
+    }
+    async forgotPassword(forgotPasswordDto) {
+        return await this.userService.forgotPassword(forgotPasswordDto);
+    }
+    async resetPassword(resetPasswordDto) {
+        return await this.userService.resetPassword(resetPasswordDto);
     }
     async logOutUser(context) {
         return await this.userService.Logout(context.req);
@@ -589,6 +624,20 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UsersResolver.prototype, "getLoggedInUser", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => user_types_1.ForgotPasswordResponse),
+    __param(0, (0, graphql_1.Args)('forgotPasswordDto')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_g = typeof user_dto_1.ForgotPasswordDto !== "undefined" && user_dto_1.ForgotPasswordDto) === "function" ? _g : Object]),
+    __metadata("design:returntype", typeof (_h = typeof Promise !== "undefined" && Promise) === "function" ? _h : Object)
+], UsersResolver.prototype, "forgotPassword", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => user_types_1.ResetPasswordResponse),
+    __param(0, (0, graphql_1.Args)('resetPasswordDto')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_j = typeof user_dto_1.ResetPasswordDto !== "undefined" && user_dto_1.ResetPasswordDto) === "function" ? _j : Object]),
+    __metadata("design:returntype", typeof (_k = typeof Promise !== "undefined" && Promise) === "function" ? _k : Object)
+], UsersResolver.prototype, "resetPassword", null);
 __decorate([
     (0, graphql_1.Query)(() => user_types_1.LogoutResposne),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
@@ -751,8 +800,8 @@ let UsersService = class UsersService {
         });
         return { token, activationCode };
     }
-    async activateUser(activateDto, response) {
-        const { activationToken, activationCode } = activateDto;
+    async activateUser(activationDto, response) {
+        const { activationToken, activationCode } = activationDto;
         const newUser = this.jwtService.verify(activationToken, {
             secret: this.configService.get('ACTIVATION_SECRET'),
         });
@@ -802,6 +851,54 @@ let UsersService = class UsersService {
     }
     async comparePassword(password, hashedPassword) {
         return await bcrypt.compare(password, hashedPassword);
+    }
+    async generateForgotPasswordLink(user) {
+        const forgotPasswordToken = this.jwtService.sign({
+            user,
+        }, {
+            secret: this.configService.get('FORGOT_PASSWORD_SECRET'),
+            expiresIn: '5m',
+        });
+        return forgotPasswordToken;
+    }
+    async forgotPassword(forgotPasswordDto) {
+        const { email } = forgotPasswordDto;
+        const user = await this.prisma.user.findUnique({
+            where: {
+                email,
+            },
+        });
+        if (!user) {
+            throw new common_1.BadRequestException('User not found with this email!');
+        }
+        const forgotPasswordToken = await this.generateForgotPasswordLink(user);
+        const resetPasswordUrl = this.configService.get('CLIENT_SIDE_URI') +
+            `/reset-password?verify=${forgotPasswordToken}`;
+        await this.emailService.sendMail({
+            email,
+            subject: 'Reset your Password!',
+            template: './forgot-password',
+            name: user.name,
+            activationCode: resetPasswordUrl,
+        });
+        return { message: `Your forgot password request succesful!` };
+    }
+    async resetPassword(resetPasswordDto) {
+        const { password, activationToken } = resetPasswordDto;
+        const decoded = await this.jwtService.decode(activationToken);
+        if (!decoded || decoded?.exp * 1000 < Date.now()) {
+            throw new common_1.BadRequestException('Invalid token!');
+        }
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = await this.prisma.user.update({
+            where: {
+                id: decoded.user.id,
+            },
+            data: {
+                password: hashedPassword,
+            },
+        });
+        return { user };
     }
     async getLoggedInUser(req) {
         const user = req.user;
