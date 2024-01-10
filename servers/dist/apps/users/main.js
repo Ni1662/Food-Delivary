@@ -944,7 +944,7 @@ class TokenSender {
             id: user.id,
         }, {
             secret: this.config.get('ACCESS_TOKEN_SECRET'),
-            expiresIn: '1m',
+            expiresIn: '2s',
         });
         const refreshToken = this.jwt.sign({
             id: user.id,
