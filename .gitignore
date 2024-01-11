@@ -1,5 +1,6 @@
 # local env
-.env.local
+.clients/user-ui/env*.local
+.servers/env
 
 # Logs
 logs

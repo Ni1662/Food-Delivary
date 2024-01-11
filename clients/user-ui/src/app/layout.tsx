@@ -11,8 +11,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Amu Food Delivery",
-  description: "Ni Food Delivery website",
+  title: "AmNite Food Delivery",
+  description: "AmNite Food Delivery website",
 };
 
 export default function RootLayout({

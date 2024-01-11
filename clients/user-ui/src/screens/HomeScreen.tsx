@@ -1,12 +1,13 @@
-import React from 'react'
-import Header from '../components/Layout/Header'
+import Header from "../components/Layout/Header";
+import Hero from "../shared/Root/Hero";
 
-const HomeScreen = () => {
+const HomeScreen = async () => {
   return (
     <div>
-        <Header />
+      <Header />
+      <Hero />
     </div>
-  )
-}
+  );
+};
 
-export default HomeScreen
+export default HomeScreen;
